@@ -10,6 +10,8 @@ variable "myip" {}
 
 variable "instance_type" {}
 variable "public_key_path" {}
+
+variable "private_key_path" {}
 resource "aws_vpc" "dev" {
 
   cidr_block = var.vpc_cidr_block
@@ -159,9 +161,24 @@ resource "aws_instance" "my-instance" {
   availability_zone           = var.avail_zone
   associate_public_ip_address = true
   #key_name = "aws"
-  key_name  = aws_key_pair.ssh-key.key_name
-  user_data                   = file("entry.sh")
-
+  key_name = aws_key_pair.ssh-key.key_name
+  #user_data                   = file("entry.sh")
+  connection {
+    type        = "ssh"
+    host        = self.public_ip
+    user        = "ec2-user"
+    private_key = file(var.private_key_path)
+  }
+  provisioner "file" {
+    source      = "entry.sh"
+    destination = "/home/ec2-user/entry.sh"
+  }
+  provisioner "remote-exec" {
+    script = file("entry.sh")
+  }
+  provisioner "local-exec" {
+    command = "echo ${self.public_ip} >> ip.txt"
+  }
   tags = {
     Name = "${var.env}-instance"
   }
