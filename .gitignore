@@ -7,3 +7,5 @@
 
 #variables
 *.tfvars
+
+crash.log
